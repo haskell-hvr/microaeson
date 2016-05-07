@@ -14,7 +14,8 @@ module Data.Aeson.Micro
     , Object, object, Pair, (.=)
     , emptyArray, emptyObject
 
-    , encodeToString
+    , encode
+    , encodeStrict
     , encodeToBuilder
     , ToJSON(toJSON)
     ) where
@@ -31,7 +32,9 @@ import GHC.Generics (Generic)
 
 import Control.DeepSeq
 import Data.ByteString.Builder (Builder)
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Builder as BB
+import qualified Data.ByteString.Lazy as BS.Lazy
 
 -- TODO: We may want to replace 'String' with 'Text' or 'ByteString'
 
@@ -131,6 +134,12 @@ instance ToJSON Integer where toJSON = Number . fromInteger
 ------------------------------------------------------------------------------
 -- 'BB.Builder'-based encoding
 
+encodeStrict :: ToJSON a => a -> BS.ByteString
+encodeStrict = BS.Lazy.toStrict . encode
+
+encode :: ToJSON a => a -> BS.Lazy.ByteString
+encode = BB.toLazyByteString . encodeToBuilder
+
 -- | Serialise value as JSON/UTF8-encoded 'Builder'
 encodeToBuilder :: ToJSON a => a -> Builder
 encodeToBuilder = encodeValueBB . toJSON
@@ -165,44 +174,6 @@ encodeStringBB :: String -> Builder
 encodeStringBB str = BB.char8 '"' <> go str <> BB.char8 '"'
   where
     go = BB.stringUtf8 . escapeString
-
-------------------------------------------------------------------------------
--- 'String'-based encoding
-
--- | Serialise value as JSON-encoded Unicode 'String'
-encodeToString :: ToJSON a => a -> String
-encodeToString jv = encodeValue (toJSON jv) []
-
-encodeValue :: Value -> ShowS
-encodeValue jv = case jv of
-  Bool b   -> showString (if b then "true" else "false")
-  Null     -> showString "null"
-  Number n
-    | isNaN n || isInfinite n    -> encodeValue Null
-    | Just i <- doubleToInt64 n -> shows i
-    | otherwise                 -> shows n
-  Array a -> encodeArray a
-  String s -> encodeString s
-  Object o -> encodeObject o
-
-encodeArray :: [Value] -> ShowS
-encodeArray [] = showString "[]"
-encodeArray jvs = ('[':) . go jvs . (']':)
-  where
-    go []     = id
-    go [x]    = encodeValue x
-    go (x:xs) = encodeValue x . (',':) . go xs
-
-encodeObject :: Object -> ShowS
-encodeObject [] = showString "{}"
-encodeObject jvs = ('{':) . go jvs . ('}':)
-  where
-    go []          = id
-    go [(l,x)]     = encodeString l . (':':) . encodeValue x
-    go ((l,x):lxs) = encodeString l . (':':) . encodeValue x . (',':) . go lxs
-
-encodeString :: String -> ShowS
-encodeString str = ('"':) . showString (escapeString str) . ('"':)
 
 ------------------------------------------------------------------------------
 -- helpers
