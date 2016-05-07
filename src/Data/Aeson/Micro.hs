@@ -9,6 +9,8 @@
 module Data.Aeson.Micro
     ( Value(..)
     , Object, object, Pair, (.=)
+    , emptyArray, emptyObject
+
     , encodeToString
     , encodeToBuilder
     , ToJSON(toJSON)
@@ -50,6 +52,13 @@ k .= v  = (k, toJSON v)
 -- | Create a 'Value' from a list of name\/value 'Pair's.
 object :: [Pair] -> Value
 object = Object
+
+emptyObject :: Value
+emptyObject = Object mempty
+
+emptyArray :: Value
+emptyArray = Array mempty
+
 
 instance IsString Value where
   fromString = String
