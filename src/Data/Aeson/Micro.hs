@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 -- | Minimal JSON / RFC 7159 support
@@ -17,12 +20,16 @@ module Data.Aeson.Micro
     ) where
 
 import Data.Char
+import Data.Data (Data)
 import Data.Int
 import Data.String
 import Data.Word
 import Data.List
 import Data.Monoid
+import Data.Typeable (Typeable)
+import GHC.Generics (Generic)
 
+import Control.DeepSeq
 import Data.ByteString.Builder (Builder)
 import qualified Data.ByteString.Builder as BB
 
@@ -35,7 +42,9 @@ data Value = Object !Object
            | Number !Double
            | Bool   !Bool
            | Null
-           deriving (Eq, Read, Show)
+           deriving (Eq, Read, Show, Generic, Data, Typeable)
+
+instance NFData Value
 
 -- | A key\/value pair for an 'Object'
 type Pair = (String, Value)
