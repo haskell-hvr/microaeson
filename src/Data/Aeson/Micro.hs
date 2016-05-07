@@ -35,6 +35,7 @@ import Data.ByteString.Builder (Builder)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Lazy as BS.Lazy
+import qualified Data.Map.Strict as Map
 
 -- TODO: We may want to replace 'String' with 'Text' or 'ByteString'
 
@@ -53,7 +54,7 @@ instance NFData Value
 type Pair = (String, Value)
 
 -- | A JSON \"object\" (key/value map).
-type Object = [Pair]
+type Object = Map.Map String Value
 
 infixr 8 .=
 
@@ -63,7 +64,7 @@ k .= v  = (k, toJSON v)
 
 -- | Create a 'Value' from a list of name\/value 'Pair's.
 object :: [Pair] -> Value
-object = Object
+object = Object . Map.fromList
 
 emptyObject :: Value
 emptyObject = Object mempty
@@ -164,9 +165,11 @@ encodeArrayBB jvs = BB.char8 '[' <> go jvs <> BB.char8 ']'
     go = Data.Monoid.mconcat . intersperse (BB.char8 ',') . map encodeValueBB
 
 encodeObjectBB :: Object -> Builder
-encodeObjectBB [] = "{}"
-encodeObjectBB jvs = BB.char8 '{' <> go jvs <> BB.char8 '}'
+encodeObjectBB m
+  | Map.null m  = "{}"
+  | otherwise = BB.char8 '{' <> go jvs <> BB.char8 '}'
   where
+    jvs = Map.toList m
     go = Data.Monoid.mconcat . intersperse (BB.char8 ',') . map encPair
     encPair (l,x) = encodeStringBB l <> BB.char8 ':' <> encodeValueBB x
 
