@@ -1,7 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings          #-}
 
 -- | Minimal JSON / RFC 7159 support
 --
@@ -18,24 +18,29 @@ module Data.Aeson.Micro
     , encodeStrict
     , encodeToBuilder
     , ToJSON(toJSON)
+
+    , parseValue
     ) where
 
-import Data.Char
-import Data.Data (Data)
-import Data.Int
-import Data.String
-import Data.Word
-import Data.List
-import Data.Monoid
-import Data.Typeable (Typeable)
-import GHC.Generics (Generic)
+import           Data.Char
+import           Data.Data                (Data)
+import           Data.Int
+import           Data.List
+import           Data.Monoid
+import           Data.String
+import           Data.Typeable            (Typeable)
+import           Data.Word
+import           GHC.Generics             (Generic)
 
-import Control.DeepSeq
-import Data.ByteString.Builder (Builder)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Builder as BB
-import qualified Data.ByteString.Lazy as BS.Lazy
-import qualified Data.Map.Strict as Map
+import           Control.DeepSeq
+import qualified Data.ByteString          as BS
+import           Data.ByteString.Builder  (Builder)
+import qualified Data.ByteString.Builder  as BB
+import qualified Data.ByteString.Lazy     as BS.Lazy
+import qualified Data.Map.Strict          as Map
+
+import           Data.Aeson.Micro.Parser
+import           Data.Aeson.Micro.Scanner (Lexeme (..), scanLexemes)
 
 -- TODO: We may want to replace 'String' with 'Text' or 'ByteString'
 
@@ -214,3 +219,79 @@ escapeString s
 
     -- unescaped = %x20-21 / %x23-5B / %x5D-10FFFF
     needsEscape c = ord c < 0x20 || c `elem` ['\\','"']
+
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+
+type LexStream = [(Lexeme,BS.ByteString)]
+
+parseValue :: BS.ByteString -> Maybe Value
+parseValue = goValue0 . scanLexemes
+  where
+    goValue0 :: LexStream -> Maybe Value
+    goValue0 x = snd <$> goValue x
+
+    goValue :: LexStream -> Maybe (LexStream, Value)
+    goValue ((L_True,_):xs)     = Just (xs,Bool True)
+    goValue ((L_False,_):xs)    = Just (xs,Bool False)
+    goValue ((L_Null,_):xs)     = Just (xs,Null)
+    goValue ((L_Number,bs):xs)  = (\n->(xs,Number n)) <$> decodeNumber bs
+    goValue ((L_StrStart,_):xs) = goString xs
+    goValue ((L_ArrStart,_):xs) = goArray xs
+    goValue ((L_ObjStart,_):xs) = goObject xs
+    goValue _                   = Nothing
+
+    goArray :: LexStream -> Maybe (LexStream, Value)
+    goArray xs0 = (Array <$>) <$> go0 xs0
+      where
+        go0 ((L_ArrEnd,_):xs) = pure (xs, [])
+        go0 xs                = do
+          (xs', v) <- goValue xs
+          go1 [v] xs'
+
+        go1 acc ((L_ArrEnd,_):xs) = pure (xs, reverse acc)
+        go1 acc ((L_Comma, _):xs) = do
+          (xs', v) <- goValue xs
+          go1 (v:acc) xs'
+        go1 _ _ = Nothing
+
+    goObject :: LexStream -> Maybe (LexStream, Value)
+    goObject xs0 = ((Object . Map.fromList) <$>) <$> go0 xs0
+      where
+        go0 ((L_ObjEnd,_):xs) = pure (xs, [])
+        go0 xs                = do
+          ((L_Colon,_):xs', String k) <- goValue xs
+          (xs'',v) <- goValue xs'
+          go1 [(k,v)] xs''
+
+        go1 acc ((L_ObjEnd,_):xs) = pure (xs, reverse acc)
+        go1 acc ((L_Comma, _):xs) = do
+          ((L_Colon,_):xs', String k) <- goValue xs
+          (xs'',v) <- goValue xs'
+          go1 ((k,v):acc) xs''
+        go1 _ _ = Nothing
+
+    goString :: LexStream -> Maybe (LexStream, Value)
+    goString xs0 = (String <$>) <$> go [] xs0
+      where
+        go _   []              = Nothing
+        go acc ((lx,chunk):xs) = case lx of
+          L_StrEnd -> pure (xs, concat (reverse acc))
+
+          L_StrUnescaped -> do
+            s <- decodeUnescaped chunk
+            go (s:acc) xs
+
+          L_StrEscaped -> do
+            c <- decodeEscaped chunk
+            go ([c]:acc) xs
+
+          L_StrEscapedHex -> do
+            c <- decodeEscapedHex chunk
+            go ([c]:acc) xs
+
+          L_StrEscapedHexSurr -> do
+            c <- decodeEscapedHexSurr chunk
+            go ([c]:acc) xs
+
+          _ -> Nothing
