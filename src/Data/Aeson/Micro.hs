@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 
@@ -19,9 +20,13 @@ module Data.Aeson.Micro
     , encodeToBuilder
     , ToJSON(toJSON)
 
-    , parseValue
+    , decodeStrict
+    , decode
+    , FromJSON(parseJSON)
+    , Parser
     ) where
 
+import           Control.Monad
 import           Data.Char
 import           Data.Data                (Data)
 import           Data.Int
@@ -222,6 +227,140 @@ escapeString s
 
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
+
+newtype Parser a = P { unP :: Maybe a }
+                 deriving (Functor,Applicative,Monad)
+
+pfail :: String -> Parser a
+pfail _ = P Nothing
+
+class FromJSON a where
+  parseJSON :: Value -> Parser a
+
+instance FromJSON Value where
+  parseJSON = pure
+
+instance FromJSON Bool where
+  parseJSON = withBool "Bool" pure
+
+instance FromJSON a => FromJSON [a] where
+  parseJSON = withArray "[a]" (mapM parseJSON)
+
+instance FromJSON Double where
+  parseJSON = withNumber "Double" pure
+
+instance FromJSON Float where
+  parseJSON = withNumber "Float" (pure . realToFrac)
+
+-- FIXME: lossy conversions
+
+instance FromJSON Integer where
+  parseJSON = withNumber "Int" (pure . round)
+
+instance FromJSON Int where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Int8 where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Int16 where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Int32 where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Int64 where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Word where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Word8 where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Word16 where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Word32 where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+instance FromJSON Word64 where
+  parseJSON = withNumber "Int" (pure . fromInteger . round)
+
+
+instance FromJSON () where
+  parseJSON = withArray "()" $ \lst ->
+    case lst of
+      [] -> pure ()
+      _  -> pfail "expected ()"
+
+instance (FromJSON a, FromJSON b) => FromJSON (a,b) where
+  parseJSON = withArray "(a,b)" $ \lst ->
+    case lst of
+      [a,b] -> liftM2 (,) (parseJSON a) (parseJSON b)
+      _     -> pfail "expected (a,b)"
+
+instance (FromJSON a, FromJSON b, FromJSON c) => FromJSON (a,b,c) where
+  parseJSON = withArray "(a,b,c)" $ \lst ->
+    case lst of
+      [a,b,c] -> liftM3 (,,) (parseJSON a) (parseJSON b) (parseJSON c)
+      _       -> pfail "expected (a,b,c)"
+
+instance (FromJSON a, FromJSON b, FromJSON c, FromJSON d) => FromJSON (a,b,c,d) where
+  parseJSON = withArray "(a,b,c,d)" $ \lst ->
+    case lst of
+      [a,b,c,d] -> liftM4 (,,,) (parseJSON a) (parseJSON b) (parseJSON c) (parseJSON d)
+      _         -> pfail "expected (a,b,c,d)"
+
+instance FromJSON a => FromJSON (Maybe a) where
+  parseJSON Null = pure Nothing
+  parseJSON j    = Just <$> parseJSON j
+
+instance FromJSON Ordering where
+  parseJSON = withString "{'LT','EQ','GT'}" $ \s ->
+    case s of
+      "LT" -> pure LT
+      "EQ" -> pure EQ
+      "GT" -> pure GT
+      _    -> pfail "expected {'LT','EQ','GT'}"
+
+instance FromJSON v => FromJSON (Map.Map String v) where
+  parseJSON = withObject "Map String v" $ mapM parseJSON
+
+-- "prisms"
+
+withBool :: String -> (Bool -> Parser a) -> Value -> Parser a
+withBool _        f (Bool arr) = f arr
+withBool expected _ v          = typeMismatch expected v
+
+withString :: String -> (String -> Parser a) -> Value -> Parser a
+withString _        f (String txt) = f txt
+withString expected _ v            = typeMismatch expected v
+
+withArray :: String -> ([Value] -> Parser a) -> Value -> Parser a
+withArray _        f (Array lst) = f lst
+withArray expected _ v           = typeMismatch expected v
+
+withObject :: String -> (Object -> Parser a) -> Value -> Parser a
+withObject _        f (Object obj) = f obj
+withObject expected _ v            = typeMismatch expected v
+
+withNumber :: String -> (Double -> Parser a) -> Value -> Parser a
+withNumber _        f (Number n) = f n
+withNumber expected _ v          = typeMismatch expected v
+
+typeMismatch :: String -> Value -> Parser a
+typeMismatch expected _ = pfail ("expected " ++ expected)
+
+----------------------------------------------------------------------------
+
+decode :: FromJSON a => BS.Lazy.ByteString -> Maybe a
+decode = decodeStrict . BS.Lazy.toStrict
+
+decodeStrict :: FromJSON a => BS.ByteString -> Maybe a
+decodeStrict bs = do
+  v <- parseValue bs
+  unP (parseJSON v)
 
 type LexStream = [(Lexeme,BS.ByteString)]
 
