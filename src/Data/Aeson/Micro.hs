@@ -6,24 +6,49 @@
 
 -- | Minimal JSON / RFC 7159 support
 --
--- The API is heavily inspired by @aeson@'s API but puts emphasis on
--- simplicity rather than performance. The 'ToJSON' instances are
--- intended to have an encoding compatible with @aeson@'s encoding.
+-- This API provides a subset (with a couple of divergences; see below) of
+-- [aeson](hackage.haskell.org/package/aeson/docs/Data-Aeson.html)
+-- API but puts the emphasis on simplicity rather than performance and features.
+--
+-- The 'ToJSON'/'FromJSON' instances are intended to have an encoding
+-- compatible with @aeson@'s encoding.
+--
+-- == Limitations and divergences from @aeson@'s API
+--
+-- In order to reduce the dependency footprint and keep the code
+-- simpler, the following divergences from the @aeson@ API have to be
+-- made:
+--
+-- * There are no `FromJSON`/`ToJSON` instances for `Char` & `String`.
+-- * The type synonym (& the constructor of the same name) 'Object' uses @containers@'s 'Map.Map' rather than a 'HashMap' @unordered-containers@.
+-- * 'Array' is represented by an ordinary list rather than a 'Vector' from the @vector@ package.
+-- * 'Number' uses 'Double' instead of 'Scientific'
 --
 module Data.Aeson.Micro
-    ( Value(..)
-    , Object, object, Pair, (.=)
-    , emptyArray, emptyObject
+    ( -- * Core JSON types
+      Value(..)
+    , Object
+    , Pair
 
+      -- ** Constructors
+    , (.=)
+    , object
+    , emptyArray
+    , emptyObject
+
+      -- * Encoding and decoding
     , encode
     , encodeStrict
     , encodeToBuilder
-    , ToJSON(toJSON)
 
     , decodeStrict
     , decode
+
+      -- * Type conversion
     , FromJSON(parseJSON)
     , Parser
+    , ToJSON(toJSON)
+
     ) where
 
 import           Control.Monad
