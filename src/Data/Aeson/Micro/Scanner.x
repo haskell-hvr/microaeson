@@ -89,6 +89,10 @@ scanLexemes = go False
       AlexEOF             -> []
       AlexError inp'      -> [(L_LexError,inp')]
       AlexSkip  inp' _len -> go inStr inp'
+      AlexToken inp' len L_StrUnescaped -- workaround for https://github.com/simonmar/alex/issues/119
+        | B.length bs - B.length inp' > len
+         -> (L_StrUnescaped,B.take (B.length bs - B.length inp') bs)
+            : go inStr inp'
       AlexToken inp' len act
          -> (act,B.take len bs)
             : go (if inStr then act /= L_StrEnd else act == L_StrStart) inp'
