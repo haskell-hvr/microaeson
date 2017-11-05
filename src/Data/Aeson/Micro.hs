@@ -332,31 +332,31 @@ instance FromJSON Int where
   parseJSON = withNumber "Int" (pure . fromInteger . round)
 
 instance FromJSON Int8 where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Int8" (pure . fromInteger . round)
 
 instance FromJSON Int16 where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Int16" (pure . fromInteger . round)
 
 instance FromJSON Int32 where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Int32" (pure . fromInteger . round)
 
 instance FromJSON Int64 where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Int64" (pure . fromInteger . round)
 
 instance FromJSON Word where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Word" (pure . fromInteger . round)
 
 instance FromJSON Word8 where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Word8" (pure . fromInteger . round)
 
 instance FromJSON Word16 where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Word16" (pure . fromInteger . round)
 
 instance FromJSON Word32 where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Word32" (pure . fromInteger . round)
 
 instance FromJSON Word64 where
-  parseJSON = withNumber "Int" (pure . fromInteger . round)
+  parseJSON = withNumber "Word64" (pure . fromInteger . round)
 
 
 instance FromJSON () where
