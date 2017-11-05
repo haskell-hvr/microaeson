@@ -318,10 +318,12 @@ instance FromJSON a => FromJSON [a] where
   parseJSON = withArray "[a]" (mapM parseJSON)
 
 instance FromJSON Double where
-  parseJSON = withNumber "Double" pure
+  parseJSON Null = pure (0/0)
+  parseJSON j    = withNumber "Double" pure j
 
 instance FromJSON Float where
-  parseJSON = withNumber "Float" (pure . realToFrac)
+  parseJSON Null = pure (0/0)
+  parseJSON j    = withNumber "Float" (pure . realToFrac) j
 
 -- FIXME: lossy conversions
 
