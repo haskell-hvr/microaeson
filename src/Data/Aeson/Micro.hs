@@ -44,6 +44,13 @@ module Data.Aeson.Micro
     , decodeStrict
     , decode
 
+      -- * Prism-style parsers
+    , withObject
+    , withText
+    , withArray
+    , withNumber
+    , withBool
+
       -- * Type conversion
     , FromJSON(parseJSON)
     , Parser
