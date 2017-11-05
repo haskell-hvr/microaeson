@@ -36,6 +36,12 @@ module Data.Aeson.Micro
     , emptyArray
     , emptyObject
 
+      -- ** Accessors
+    , (.:)
+    , (.:?)
+    , (.:!)
+    , (.!=)
+
       -- * Encoding and decoding
     , encode
     , encodeStrict
@@ -120,6 +126,22 @@ emptyObject = Object mempty
 
 emptyArray :: Value
 emptyArray = Array mempty
+
+----------------------------------------------------------------------------
+
+(.:) :: FromJSON a => Object -> Text -> Parser a
+m .: k = maybe (pfail "key not found") parseJSON (Map.lookup k m)
+
+(.:?) :: FromJSON a => Object -> Text -> Parser (Maybe a)
+m .:? k = maybe (pure Nothing) parseJSON (Map.lookup k m)
+
+(.:!) :: FromJSON a => Object -> Text -> Parser (Maybe a)
+m .:! k = maybe (pure Nothing) (fmap Just . parseJSON) (Map.lookup k m)
+
+(.!=) :: Parser (Maybe a) -> a -> Parser a
+mv .!= def = fmap (maybe def id) mv
+
+----------------------------------------------------------------------------
 
 -- | A type that can be converted to JSON.
 class ToJSON a where
