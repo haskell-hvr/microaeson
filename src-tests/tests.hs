@@ -4,11 +4,11 @@ module Main where
 
 import qualified Data.HashMap.Strict   as HM
 import qualified Data.Map.Strict       as Map
-import qualified Data.Text             as T
 import qualified Data.Vector           as V
 
 import           Test.Tasty
 import           Test.Tasty.QuickCheck as QC
+import Test.QuickCheck.Instances ()
 
 import qualified Data.Aeson            as REF
 import qualified Data.Aeson.Micro      as IUT
@@ -55,18 +55,18 @@ instance Arbitrary IUT.Value where
 
 toAeson :: IUT.Value -> REF.Value
 toAeson j = case j of
-  IUT.String s -> REF.String (T.pack s)
+  IUT.String t -> REF.String t
   IUT.Number n -> REF.toJSON n
   IUT.Bool b   -> REF.Bool b
   IUT.Null     -> REF.Null
   IUT.Array l  -> REF.Array (V.fromList (map toAeson l))
-  IUT.Object m -> REF.object [ (T.pack k, toAeson v) | (k,v) <- Map.toList m ]
+  IUT.Object m -> REF.object [ (k, toAeson v) | (k,v) <- Map.toList m ]
 
 fromAeson :: REF.Value -> IUT.Value
 fromAeson j = case j of
-  REF.String t -> IUT.String (T.unpack t)
+  REF.String t -> IUT.String t
   REF.Bool b   -> IUT.Bool b
   REF.Null     -> IUT.Null
   REF.Number s -> IUT.Number (realToFrac s)
   REF.Array v  -> IUT.Array (map fromAeson (V.toList v))
-  REF.Object m -> IUT.object [ (T.unpack k, fromAeson v) | (k,v) <- HM.toList m ]
+  REF.Object m -> IUT.object [ (k, fromAeson v) | (k,v) <- HM.toList m ]

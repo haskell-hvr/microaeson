@@ -68,6 +68,10 @@ import           Data.ByteString.Builder  (Builder)
 import qualified Data.ByteString.Builder  as BB
 import qualified Data.ByteString.Lazy     as BS.Lazy
 import qualified Data.Map.Strict          as Map
+import           Data.Text                (Text)
+import qualified Data.Text                as T
+import qualified Data.Text.Encoding       as T
+import qualified Data.Text.Lazy           as TL
 
 import           Data.Aeson.Micro.Parser
 import           Data.Aeson.Micro.Scanner (Lexeme (..), scanLexemes)
@@ -77,7 +81,7 @@ import           Data.Aeson.Micro.Scanner (Lexeme (..), scanLexemes)
 -- | A JSON value represented as a Haskell value.
 data Value = Object !Object
            | Array  [Value]
-           | String  String
+           | String !Text
            | Number !Double
            | Bool   !Bool
            | Null
@@ -85,16 +89,19 @@ data Value = Object !Object
 
 instance NFData Value
 
+instance IsString Value where
+  fromString = String . fromString
+
 -- | A key\/value pair for an 'Object'
-type Pair = (String, Value)
+type Pair = (Text, Value)
 
 -- | A JSON \"object\" (key/value map).
-type Object = Map.Map String Value
+type Object = Map.Map Text Value
 
 infixr 8 .=
 
 -- | A key-value pair for encoding a JSON object.
-(.=) :: ToJSON v => String -> v -> Pair
+(.=) :: ToJSON v => Text -> v -> Pair
 k .= v  = (k, toJSON v)
 
 -- | Create a 'Value' from a list of name\/value 'Pair's.
@@ -106,11 +113,6 @@ emptyObject = Object mempty
 
 emptyArray :: Value
 emptyArray = Array mempty
-
-
-instance IsString Value where
-  fromString = String
-
 
 -- | A type that can be converted to JSON.
 class ToJSON a where
@@ -129,6 +131,9 @@ instance ToJSON Bool where
 instance ToJSON a => ToJSON [a] where
   toJSON = Array . map toJSON
 
+instance ToJSON v => ToJSON (Map.Map Text v) where
+  toJSON = Object . Map.map toJSON
+
 instance ToJSON a => ToJSON (Maybe a) where
   toJSON Nothing  = Null
   toJSON (Just a) = toJSON a
@@ -141,6 +146,12 @@ instance (ToJSON a,ToJSON b,ToJSON c) => ToJSON (a,b,c) where
 
 instance (ToJSON a,ToJSON b,ToJSON c, ToJSON d) => ToJSON (a,b,c,d) where
   toJSON (a,b,c,d) = Array [toJSON a, toJSON b, toJSON c, toJSON d]
+
+instance ToJSON Text where
+  toJSON = String
+
+instance ToJSON TL.Text where
+  toJSON = toJSON . TL.toStrict
 
 instance ToJSON Float where
   toJSON = Number . realToFrac
@@ -208,10 +219,10 @@ encodeObjectBB m
     go = Data.Monoid.mconcat . intersperse (BB.char8 ',') . map encPair
     encPair (l,x) = encodeStringBB l <> BB.char8 ':' <> encodeValueBB x
 
-encodeStringBB :: String -> Builder
+encodeStringBB :: Text -> Builder
 encodeStringBB str = BB.char8 '"' <> go str <> BB.char8 '"'
   where
-    go = BB.stringUtf8 . escapeString
+    go = T.encodeUtf8Builder . escapeText
 
 ------------------------------------------------------------------------------
 -- helpers
@@ -229,10 +240,10 @@ doubleToInt64 x
     x' = round x
 
 -- | Minimally escape a 'String' in accordance with RFC 7159, "7. Strings"
-escapeString :: String -> String
-escapeString s
-  | not (any needsEscape s) = s
-  | otherwise               = escape s
+escapeText :: Text -> Text
+escapeText s
+  | not (T.any needsEscape s) = s
+  | otherwise                 = (T.pack . escape . T.unpack) s
   where
     escape [] = []
     escape (x:xs) = case x of
@@ -267,6 +278,12 @@ instance FromJSON Value where
 
 instance FromJSON Bool where
   parseJSON = withBool "Bool" pure
+
+instance FromJSON Text where
+  parseJSON = withText "Text" pure
+
+instance FromJSON TL.Text where
+  parseJSON = withText "Text" (pure . TL.fromStrict)
 
 instance FromJSON a => FromJSON [a] where
   parseJSON = withArray "[a]" (mapM parseJSON)
@@ -342,15 +359,15 @@ instance FromJSON a => FromJSON (Maybe a) where
   parseJSON j    = Just <$> parseJSON j
 
 instance FromJSON Ordering where
-  parseJSON = withString "{'LT','EQ','GT'}" $ \s ->
+  parseJSON = withText "{'LT','EQ','GT'}" $ \s ->
     case s of
       "LT" -> pure LT
       "EQ" -> pure EQ
       "GT" -> pure GT
       _    -> pfail "expected {'LT','EQ','GT'}"
 
-instance FromJSON v => FromJSON (Map.Map String v) where
-  parseJSON = withObject "Map String v" $ mapM parseJSON
+instance FromJSON v => FromJSON (Map.Map Text v) where
+  parseJSON = withObject "Map Text v" $ mapM parseJSON
 
 -- "prisms"
 
@@ -358,9 +375,9 @@ withBool :: String -> (Bool -> Parser a) -> Value -> Parser a
 withBool _        f (Bool arr) = f arr
 withBool expected _ v          = typeMismatch expected v
 
-withString :: String -> (String -> Parser a) -> Value -> Parser a
-withString _        f (String txt) = f txt
-withString expected _ v            = typeMismatch expected v
+withText :: String -> (Text -> Parser a) -> Value -> Parser a
+withText _        f (String txt) = f txt
+withText expected _ v            = typeMismatch expected v
 
 withArray :: String -> ([Value] -> Parser a) -> Value -> Parser a
 withArray _        f (Array lst) = f lst
@@ -436,7 +453,7 @@ parseValue = goValue0 . scanLexemes
         go1 _ _ = Nothing
 
     goString :: LexStream -> Maybe (LexStream, Value)
-    goString xs0 = (String <$>) <$> go [] xs0
+    goString xs0 = ((String . T.pack) <$>) <$> go [] xs0
       where
         go _   []              = Nothing
         go acc ((lx,chunk):xs) = case lx of
