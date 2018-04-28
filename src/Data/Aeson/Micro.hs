@@ -61,7 +61,7 @@ module Data.Aeson.Micro
 
       -- * Type conversion
     , FromJSON(parseJSON)
-    , Parser
+    , Parser, parseMaybe
     , ToJSON(toJSON)
 
     ) where
@@ -297,6 +297,12 @@ escapeText s
 
 newtype Parser a = P { unP :: Maybe a }
                  deriving (Functor,Applicative,Monad)
+
+-- | Run 'Parser'.
+--
+-- A common use-case is @'parseMaybe' 'parseJSON'@.
+parseMaybe :: (a -> Parser b) -> a -> Maybe b
+parseMaybe m v = unP (m v)
 
 pfail :: String -> Parser a
 pfail _ = P Nothing
