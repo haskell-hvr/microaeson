@@ -50,6 +50,8 @@ module Data.Aeson.Micro
     , decodeStrict
     , decode
 
+    , decodeStrictN
+
       -- * Prism-style parsers
     , withObject
     , withText
@@ -427,22 +429,38 @@ typeMismatch expected _ = pfail ("expected " ++ expected)
 
 ----------------------------------------------------------------------------
 
+-- | Decode a single JSON document
 decode :: FromJSON a => BS.Lazy.ByteString -> Maybe a
 decode = decodeStrict . BS.Lazy.toStrict
 
+-- | Decode a single JSON document
 decodeStrict :: FromJSON a => BS.ByteString -> Maybe a
 decodeStrict bs = do
-  v <- parseValue bs
+  v <- decodeValue bs
   unP (parseJSON v)
+
+-- | Decode multiple concatenated JSON documents
+decodeStrictN :: FromJSON a => BS.ByteString -> Maybe [a]
+decodeStrictN = go [] . scanLexemes
+  where
+    go acc [] = Just $! reverse acc
+    go acc ls = do
+      (ls', v) <- parseValue ls
+      a <- unP (parseJSON v)
+      go (a:acc) ls'
+
+----
 
 type LexStream = [(Lexeme,BS.ByteString)]
 
-parseValue :: BS.ByteString -> Maybe Value
-parseValue = goValue0 . scanLexemes
-  where
-    goValue0 :: LexStream -> Maybe Value
-    goValue0 x = snd <$> goValue x
+decodeValue :: BS.ByteString -> Maybe Value
+decodeValue bs = case parseValue (scanLexemes bs) of
+                Just ([], v) -> Just v
+                _            -> Nothing
 
+parseValue :: LexStream -> Maybe (LexStream, Value)
+parseValue = goValue
+  where
     goValue :: LexStream -> Maybe (LexStream, Value)
     goValue ((L_True,_):xs)     = Just (xs,Bool True)
     goValue ((L_False,_):xs)    = Just (xs,Bool False)
