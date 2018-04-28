@@ -4,13 +4,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings          #-}
 
--- | Minimal JSON / RFC 7159 support
+-- | Minimal JavaScript Object Notation (JSON) support as per <https://tools.ietf.org/html/rfc8259 RFC 8259>.
 --
 -- This API provides a subset (with a couple of divergences; see below) of
--- [aeson](hackage.haskell.org/package/aeson/docs/Data-Aeson.html)
--- API but puts the emphasis on simplicity rather than performance and features.
+-- [aeson API](https://hackage.haskell.org/package/aeson/docs/Data-Aeson.html)
+-- but puts the emphasis on simplicity rather than performance and features.
 --
--- The 'ToJSON'/'FromJSON' instances are intended to have an encoding
+-- The 'ToJSON' and 'FromJSON' instances are intended to have an encoding
 -- compatible with @aeson@'s encoding.
 --
 -- == Limitations and divergences from @aeson@'s API
@@ -123,9 +123,11 @@ k .= v  = (k, toJSON v)
 object :: [Pair] -> Value
 object = Object . Map.fromList
 
+-- | The empty JSON 'Object' (i.e. @{}@).
 emptyObject :: Value
 emptyObject = Object mempty
 
+-- | The empty JSON 'Array' (i.e. @[]@).
 emptyArray :: Value
 emptyArray = Array mempty
 
@@ -212,9 +214,11 @@ instance ToJSON Integer where toJSON = Number . fromInteger
 ------------------------------------------------------------------------------
 -- 'BB.Builder'-based encoding
 
+-- | Serialise value as JSON/UTF-8-encoded strict 'BS.ByteString'
 encodeStrict :: ToJSON a => a -> BS.ByteString
 encodeStrict = BS.Lazy.toStrict . encode
 
+-- | Serialise value as JSON/UTF-8-encoded lazy 'BS.Lazy.ByteString'
 encode :: ToJSON a => a -> BS.Lazy.ByteString
 encode = BB.toLazyByteString . encodeToBuilder
 
@@ -270,7 +274,7 @@ doubleToInt64 x
   where
     x' = round x
 
--- | Minimally escape a 'String' in accordance with RFC 7159, "7. Strings"
+-- | Minimally escape a 'String' in accordance with [RFC 8259, "7. Strings"](https://tools.ietf.org/html/rfc8259#section-7)
 escapeText :: Text -> Text
 escapeText s
   | not (T.any needsEscape s) = s
@@ -295,6 +299,7 @@ escapeText s
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 
+-- | JSON Parser 'Monad' used by 'FromJSON'
 newtype Parser a = P { unP :: Maybe a }
                  deriving (Functor,Applicative,Monad)
 
@@ -307,7 +312,9 @@ parseMaybe m v = unP (m v)
 pfail :: String -> Parser a
 pfail _ = P Nothing
 
+-- | A type that JSON can be deserialised into
 class FromJSON a where
+  -- | Decode a JSON value into a native Haskell type
   parseJSON :: Value -> Parser a
 
 instance FromJSON Value where
