@@ -67,6 +67,7 @@ module Data.Aeson.Micro
     ) where
 
 import           Control.Monad
+import           Control.Monad.Fail
 import           Data.Char
 import           Data.Data                (Data)
 import           Data.Int
@@ -301,7 +302,7 @@ escapeText s
 
 -- | JSON Parser 'Monad' used by 'FromJSON'
 newtype Parser a = P { unP :: Maybe a }
-                 deriving (Functor,Applicative,Monad)
+                 deriving (Functor,Applicative,Monad,MonadFail)
 
 -- | Run 'Parser'.
 --
