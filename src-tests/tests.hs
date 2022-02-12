@@ -1,8 +1,16 @@
+{-# LANGUAGE CPP #-}
+
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Main where
 
-import qualified Data.HashMap.Strict   as HM
+#if !MIN_VERSION_aeson(2,0,0)
+import qualified Data.HashMap.Strict   as KeyMap
+import           Data.Text             (Text)
+#else
+import qualified Data.Aeson.KeyMap     as KeyMap
+import           Data.Aeson.Key        (fromText, toText)
+#endif
 import qualified Data.Map.Strict       as Map
 import qualified Data.Vector           as V
 
@@ -60,7 +68,7 @@ toAeson j = case j of
   IUT.Bool b   -> REF.Bool b
   IUT.Null     -> REF.Null
   IUT.Array l  -> REF.Array (V.fromList (map toAeson l))
-  IUT.Object m -> REF.object [ (k, toAeson v) | (k,v) <- Map.toList m ]
+  IUT.Object m -> REF.object [ (fromText k, toAeson v) | (k,v) <- Map.toList m ]
 
 fromAeson :: REF.Value -> IUT.Value
 fromAeson j = case j of
@@ -69,4 +77,10 @@ fromAeson j = case j of
   REF.Null     -> IUT.Null
   REF.Number s -> IUT.Number (realToFrac s)
   REF.Array v  -> IUT.Array (map fromAeson (V.toList v))
-  REF.Object m -> IUT.object [ (k, fromAeson v) | (k,v) <- HM.toList m ]
+  REF.Object m -> IUT.object [ (toText k, fromAeson v) | (k,v) <- KeyMap.toList m ]
+
+#if !MIN_VERSION_aeson(2,0,0)
+fromText, toText :: Text -> Text
+fromText = id
+toText   = id
+#endif
