@@ -69,7 +69,7 @@ library
                    , fail       ^>= 4.9.0.0
                    , text       ^>= 1.2.2.2
 
-  build-tools:       alex       ^>= 3.2.0
+  build-tool-depends: alex:alex ^>= 3.2.0
 
   ghc-options:       -Wall
 
