@@ -20,6 +20,17 @@ The API is designed in such a way to allow to easily convert client code written
 
 }
 
+tested-with:
+  GHC == 9.2.1
+  GHC == 9.0.2
+  GHC == 8.10.7
+  GHC == 8.8.4
+  GHC == 8.6.5
+  GHC == 8.4.4
+  GHC == 8.2.2
+  GHC == 8.0.2
+  GHC == 7.10.3
+
 source-repository head
   type:              git
   location:          https://github.com/hvr/microaeson.git
