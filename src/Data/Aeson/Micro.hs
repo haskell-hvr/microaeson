@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -67,11 +68,13 @@ module Data.Aeson.Micro
     ) where
 
 import           Control.Monad
+#if !MIN_VERSION_base(4,13,0)
 import           Control.Monad.Fail
+#endif
 import           Data.Char
 import           Data.Data                (Data)
 import           Data.Int
-import           Data.List
+import           Data.List                (intersperse)
 import           Data.Monoid
 import           Data.String
 import           Data.Typeable            (Typeable)
