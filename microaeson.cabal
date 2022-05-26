@@ -1,7 +1,6 @@
 cabal-version:       2.0
 name:                microaeson
-version:             0.1.0.0
-x-revision:          5
+version:             0.1.0.1
 
 synopsis:            A tiny JSON library with light dependency footprint
 license:             GPL-3
@@ -32,9 +31,13 @@ tested-with:
   GHC == 8.0.2
   GHC == 7.10.3
 
+extra-source-files:
+  CHANGELOG.md
+  README.md
+
 source-repository head
   type:              git
-  location:          https://github.com/hvr/microaeson.git
+  location:          https://github.com/haskell-hvr/microaeson.git
 
 library
   default-language:  Haskell2010
