@@ -1,0 +1,17 @@
+name: Create dependency bump PR
+on:
+  # allows manual triggering from https://github.com/haskell-hvr/microaeson/actions/workflows/bump.yml
+  workflow_dispatch:
+  # runs weekly on Thursday at 5:00
+  schedule:
+    - cron: '0 5 * * 4'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: nomeata/haskell-bounds-bump-action@main
