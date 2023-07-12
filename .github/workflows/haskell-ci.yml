@@ -8,9 +8,9 @@
 #
 # For more information, see https://github.com/haskell-CI/haskell-ci
 #
-# version: 0.16.1
+# version: 0.16.4
 #
-# REGENDATA ("0.16.1",["github","microaeson.cabal"])
+# REGENDATA ("0.16.4",["github","microaeson.cabal"])
 #
 name: Haskell-CI
 on:
@@ -32,9 +32,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - compiler: ghc-9.6.1
+          - compiler: ghc-9.6.2
             compilerKind: ghc
-            compilerVersion: 9.6.1
+            compilerVersion: 9.6.2
             setup-method: ghcup
             allow-failure: false
           - compiler: ghc-9.4.5
@@ -42,9 +42,9 @@ jobs:
             compilerVersion: 9.4.5
             setup-method: ghcup
             allow-failure: false
-          - compiler: ghc-9.2.7
+          - compiler: ghc-9.2.8
             compilerKind: ghc
-            compilerVersion: 9.2.7
+            compilerVersion: 9.2.8
             setup-method: ghcup
             allow-failure: false
           - compiler: ghc-9.0.2
@@ -216,6 +216,7 @@ jobs:
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "package microaeson" >> cabal.project ; fi
           if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           cat >> cabal.project <<EOF
+          allow-newer: bytestring
           EOF
           $HCPKG list --simple-output --names-only | perl -ne 'for (split /\s+/) { print "constraints: $_ installed\n" unless /^(microaeson)$/; }' >> cabal.project.local
           cat cabal.project
@@ -254,6 +255,14 @@ jobs:
         run: |
           rm -f cabal.project.local
           $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks all
+      - name: prepare for constraint sets
+        run: |
+          rm -f cabal.project.local
+      - name: constraint set bytestring-0.12
+        run: |
+          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='bytestring >= 0.12' --dependencies-only -j2 all ; fi
+          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='bytestring >= 0.12' all ; fi
+          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then $CABAL v2-test $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='bytestring >= 0.12' all ; fi
       - name: save cache
         uses: actions/cache/save@v3
         if: always()
