@@ -1,7 +1,7 @@
 cabal-version:       2.0
 name:                microaeson
 version:             0.1.0.1
-x-revision:          7
+x-revision:          8
 
 synopsis:            A tiny JSON library with light dependency footprint
 license:             GPL-3
