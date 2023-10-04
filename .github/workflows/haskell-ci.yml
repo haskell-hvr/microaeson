@@ -8,9 +8,9 @@
 #
 # For more information, see https://github.com/andreasabel/haskell-ci
 #
-# version: 0.17.20230911
+# version: 0.17.20231002
 #
-# REGENDATA ("0.17.20230911",["github","microaeson.cabal"])
+# REGENDATA ("0.17.20231002",["github","microaeson.cabal"])
 #
 name: Haskell-CI
 on:
@@ -32,14 +32,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - compiler: ghc-9.8.0.20230822
+          - compiler: ghc-9.8.0.20230929
             compilerKind: ghc
-            compilerVersion: 9.8.0.20230822
+            compilerVersion: 9.8.0.20230929
             setup-method: ghcup
             allow-failure: true
-          - compiler: ghc-9.6.2
+          - compiler: ghc-9.6.3
             compilerKind: ghc
-            compilerVersion: 9.6.2
+            compilerVersion: 9.6.3
             setup-method: ghcup
             allow-failure: false
           - compiler: ghc-9.4.7
@@ -75,6 +75,11 @@ jobs:
           - compiler: ghc-8.4.4
             compilerKind: ghc
             compilerVersion: 8.4.4
+            setup-method: hvr-ppa
+            allow-failure: false
+          - compiler: ghc-8.2.2
+            compilerKind: ghc
+            compilerVersion: 8.2.2
             setup-method: hvr-ppa
             allow-failure: false
           - compiler: ghc-8.0.2
@@ -229,11 +234,10 @@ jobs:
           touch cabal.project
           touch cabal.project.local
           echo "packages: ${PKGDIR_microaeson}" >> cabal.project
-          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then echo "package microaeson" >> cabal.project ; fi
-          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
+          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "package microaeson" >> cabal.project ; fi
+          if [ $((HCNUMVER >= 80200)) -ne 0 ] ; then echo "    ghc-options: -Werror=missing-methods" >> cabal.project ; fi
           cat >> cabal.project <<EOF
-          allow-newer: bytestring
-          allow-newer: text
+          allow-newer: containers
           EOF
           if $HEADHACKAGE; then
           echo "allow-newer: $($HCPKG list --simple-output | sed -E 's/([a-zA-Z-]+)-[0-9.]+/*:\1,/g')" >> cabal.project
@@ -278,26 +282,13 @@ jobs:
       - name: prepare for constraint sets
         run: |
           rm -f cabal.project.local
-      - name: constraint set text-2.1-tests
+      - name: constraint set containers-0.7
         run: |
-          if [ $((HCNUMVER >= 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='text ^>= 2.1' all --dry-run ; fi
-          if [ $((HCNUMVER >= 90800)) -ne 0 ] ; then cabal-plan topo | sort ; fi
-          if [ $((HCNUMVER >= 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='text ^>= 2.1' --dependencies-only -j2 all ; fi
-          if [ $((HCNUMVER >= 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='text ^>= 2.1' all ; fi
-          if [ $((HCNUMVER >= 90800)) -ne 0 ] ; then $CABAL v2-test $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='text ^>= 2.1' all ; fi
-      - name: constraint set text-2.1
-        run: |
-          if [ $((HCNUMVER >= 80400 && HCNUMVER < 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='text ^>= 2.1' all --dry-run ; fi
-          if [ $((HCNUMVER >= 80400 && HCNUMVER < 90800)) -ne 0 ] ; then cabal-plan topo | sort ; fi
-          if [ $((HCNUMVER >= 80400 && HCNUMVER < 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='text ^>= 2.1' --dependencies-only -j2 all ; fi
-          if [ $((HCNUMVER >= 80400 && HCNUMVER < 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --disable-tests --disable-benchmarks --constraint='text ^>= 2.1' all ; fi
-      - name: constraint set bytestring-0.12
-        run: |
-          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='bytestring ^>= 0.12' --constraint='text < 2.1' all --dry-run ; fi
-          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then cabal-plan topo | sort ; fi
-          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='bytestring ^>= 0.12' --constraint='text < 2.1' --dependencies-only -j2 all ; fi
-          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='bytestring ^>= 0.12' --constraint='text < 2.1' all ; fi
-          if [ $((HCNUMVER >= 80400)) -ne 0 ] ; then $CABAL v2-test $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='bytestring ^>= 0.12' --constraint='text < 2.1' all ; fi
+          if [ $((HCNUMVER >= 80200 && HCNUMVER < 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='containers ^>= 0.7' all --dry-run ; fi
+          if [ $((HCNUMVER >= 80200 && HCNUMVER < 90800)) -ne 0 ] ; then cabal-plan topo | sort ; fi
+          if [ $((HCNUMVER >= 80200 && HCNUMVER < 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='containers ^>= 0.7' --dependencies-only -j2 all ; fi
+          if [ $((HCNUMVER >= 80200 && HCNUMVER < 90800)) -ne 0 ] ; then $CABAL v2-build $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='containers ^>= 0.7' all ; fi
+          if [ $((HCNUMVER >= 80200 && HCNUMVER < 90800)) -ne 0 ] ; then $CABAL v2-test $ARG_COMPILER --enable-tests --disable-benchmarks --constraint='containers ^>= 0.7' all ; fi
       - name: save cache
         uses: actions/cache/save@v3
         if: always()
