@@ -21,7 +21,7 @@ The API is designed in such a way to allow to easily convert client code written
 }
 
 tested-with:
-  GHC == 9.8.0
+  GHC == 9.8.1
   GHC == 9.6.3
   GHC == 9.4.7
   GHC == 9.2.8
