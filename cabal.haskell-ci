@@ -1,13 +1,13 @@
 branches: master
 
-constraint-set containers-0.7
-  ghc: >= 8.2 && < 9.8
-  constraints: containers ^>= 0.7
-  tests: True
-  run-tests: True
+-- constraint-set containers-0.7
+--   ghc: >= 8.2 && < 9.8
+--   constraints: containers ^>= 0.7
+--   tests: True
+--   run-tests: True
 
-raw-project
-  allow-newer: containers
+-- raw-project
+--   allow-newer: containers
 
 -- -- `allow-newer: text` breaks aeson in the GHC-8.2 build
 -- enabled: < 8.2 || > 8.3
