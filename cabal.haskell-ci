@@ -1,38 +1,10 @@
 branches: master
 
--- constraint-set containers-0.7
---   ghc: >= 8.2 && < 9.8
---   constraints: containers ^>= 0.7
---   tests: True
---   run-tests: True
+constraint-set containers-0.8
+  ghc: >= 8.2
+  constraints: containers ^>= 0.8
+  tests: True
+  run-tests: True
 
--- raw-project
---   allow-newer: containers
-
--- -- `allow-newer: text` breaks aeson in the GHC-8.2 build
--- enabled: < 8.2 || > 8.3
---
--- constraint-set bytestring-0.12
---   ghc: >= 8.2
---   constraints: bytestring ^>= 0.12
---   constraints: text < 2.1
---     -- otherwise aeson fails to build
---   tests: True
---   run-tests: True
---
--- constraint-set text-2.1
---   ghc: >= 8.2 && < 9.8
---   constraints: text ^>= 2.1
---   -- Cannot build aeson with text-2.1 atm (2023-08-31)
---   tests: False
---
--- constraint-set text-2.1-tests
---   ghc: >= 9.8
---   constraints: text ^>= 2.1
---   tests: True
---   run-tests: True
---
--- -- For constraint-sets
--- raw-project
---   allow-newer: bytestring
---   allow-newer: text
+raw-project
+  allow-newer: containers
