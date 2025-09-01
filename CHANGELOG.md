@@ -1,3 +1,11 @@
+### 0.1.0.3
+
+_Andreas Abel, 2025-09-01_
+
+- Remove unused dependencies
+- Tested with GHC 8.0 - 9.14 alpha1.
+
+
 ### 0.1.0.2
 
 _Andreas Abel, 2024-06-25_
@@ -10,5 +18,5 @@ _Andreas Abel, 2024-06-25_
 
 _Andreas Abel, 2022-05-26_
 
-- Allow `base >= 4.17`
-- Tested with GHC 7.10 - 9.4
+- Allow `base >= 4.17`.
+- Tested with GHC 7.10 - 9.4.

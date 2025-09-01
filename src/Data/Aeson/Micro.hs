@@ -77,7 +77,6 @@ import           Data.Int
 import           Data.List                (intersperse)
 import           Data.Monoid
 import           Data.String
-import           Data.Typeable            (Typeable)
 import           Data.Word
 import           GHC.Generics             (Generic)
 
@@ -104,7 +103,7 @@ data Value = Object !Object
            | Number !Double
            | Bool   !Bool
            | Null
-           deriving (Eq, Read, Show, Generic, Data, Typeable)
+           deriving (Eq, Read, Show, Generic, Data)
 
 instance NFData Value
 
