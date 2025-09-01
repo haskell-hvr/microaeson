@@ -2,7 +2,8 @@
 
 _Andreas Abel, 2025-09-01_
 
-- Remove unused dependencies
+- Drop support for `aeson-1.*`.
+- Remove unused dependencies.
 - Tested with GHC 8.0 - 9.14 alpha1.
 
 

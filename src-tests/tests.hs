@@ -1,16 +1,9 @@
-{-# LANGUAGE CPP #-}
-
-{-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# OPTIONS_GHC -Wno-orphans #-}
 
 module Main where
 
-#if !MIN_VERSION_aeson(2,0,0)
-import qualified Data.HashMap.Strict   as KeyMap
-import           Data.Text             (Text)
-#else
 import qualified Data.Aeson.KeyMap     as KeyMap
 import           Data.Aeson.Key        (fromText, toText)
-#endif
 import qualified Data.Map.Strict       as Map
 import qualified Data.Vector           as V
 
@@ -78,9 +71,3 @@ fromAeson j = case j of
   REF.Number s -> IUT.Number (realToFrac s)
   REF.Array v  -> IUT.Array (map fromAeson (V.toList v))
   REF.Object m -> IUT.object [ (toText k, fromAeson v) | (k,v) <- KeyMap.toList m ]
-
-#if !MIN_VERSION_aeson(2,0,0)
-fromText, toText :: Text -> Text
-fromText = id
-toText   = id
-#endif
