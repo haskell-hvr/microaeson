@@ -93,7 +93,7 @@ test-suite microaeson
                    , containers
 
   -- dependencies requiring constraints
-  build-depends:     aeson                 >= 2.0.3.0 && < 2.3
+  build-depends:     aeson                 >= 2.0.3.0 && < 2.4
                    , quickcheck-instances ^>= 0.3.16
                                        || ^>= 0.4
                    , tasty                 >= 1.0.1.1 && < 1.6
